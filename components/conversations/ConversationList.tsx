@@ -12,21 +12,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Calendar, ChevronRight } from "lucide-react";
-
-interface Conversation {
-    id: string;
-    widgetId: string;
-    visitorId: string | null;
-    lastMessage: string | null;
-    createdAt: string;
-    updatedAt: string;
-    widget: {
-        name: string;
-    };
-}
+import { ConversationSummary } from "@/types/conversations";
 
 interface ConversationListProps {
-    conversations: Conversation[];
+    conversations: ConversationSummary[];
     isLoading: boolean;
 }
 

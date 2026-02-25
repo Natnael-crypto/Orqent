@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { Prisma, Integration } from "@prisma/client";
 
 export class IntegrationRepository {
-    async findById(id: string): Promise<Integration | null> {
-        return prisma.integration.findUnique({ where: { id }, include: { restTools: true } });
+    async findById<T extends Prisma.IntegrationInclude>(id: string, include?: T) {
+        return prisma.integration.findUnique({ where: { id }, include });
     }
 
     async findByUserId(userId: string): Promise<Integration[]> {
@@ -22,14 +22,8 @@ export class IntegrationRepository {
         return prisma.integration.delete({ where: { id } });
     }
 
-    async findAll(params: {
-        skip?: number;
-        take?: number;
-        where?: Prisma.IntegrationWhereInput;
-        orderBy?: Prisma.IntegrationOrderByWithRelationInput;
-    }) {
-        const { skip, take, where, orderBy } = params;
-        return prisma.integration.findMany({ skip, take, where, orderBy, include: { restTools: true } });
+    async findAll<T extends Prisma.IntegrationFindManyArgs>(args: T) {
+        return prisma.integration.findMany(args);
     }
 
     async count(where?: Prisma.IntegrationWhereInput): Promise<number> {

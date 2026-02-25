@@ -1,6 +1,8 @@
 "use client";
 
 import { useIntegration, useIntegrationLogs, useIntegrationActions } from "@/hooks/useIntegrations";
+import type { IntegrationLog, Integration, RestTool } from "@/hooks/services/integrationService";
+import type { Widget } from "@/types/widgets";
 import {
     Loader2,
     ArrowLeft,
@@ -59,6 +61,60 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useParams, useRouter } from "next/navigation";
 
+/* ─── Types ─── */
+
+interface PropertyConfig {
+    type?: string;
+    value?: string;
+    description?: string;
+}
+
+interface SchemaConfig {
+    type: string;
+    properties: Record<string, PropertyConfig>;
+    schema?: {
+        type: string;
+        properties: Record<string, PropertyConfig>;
+        required?: string[];
+    };
+}
+
+interface FormRestTool {
+    id?: string;
+    method: string;
+    path: string;
+    contentType: string;
+    headers: Record<string, string>;
+    requestConfig: {
+        pathParams: SchemaConfig;
+        queryParams: SchemaConfig;
+        headers: SchemaConfig;
+        cookies: SchemaConfig;
+        body: { type: string; schema: SchemaConfig["schema"] };
+        timeoutMs: number;
+    };
+    responseConfig: {
+        successStatusCodes: number[];
+        responseSchema: SchemaConfig;
+        dataPath: string;
+        errorPath: string;
+        strictValidation: boolean;
+    };
+    requiresConfirmation: boolean;
+    isActive: boolean;
+}
+
+interface FormData {
+    name: string;
+    description: string;
+    type: string;
+    config: {
+        baseUrl: string;
+        headers: Record<string, string>;
+    };
+    restTools: FormRestTool[];
+}
+
 /* ─── helpers ─── */
 
 const METHOD_COLORS: Record<string, string> = {
@@ -86,9 +142,9 @@ const PropertyRow = ({
     showValue = false
 }: {
     name: string;
-    config: any;
+    config: PropertyConfig;
     onRemove: () => void;
-    onUpdateProperty: (field: string, value: any) => void;
+    onUpdateProperty: (field: string, value: string) => void;
     onUpdateName: (newName: string) => void;
     showValue?: boolean;
 }) => {
@@ -166,6 +222,8 @@ const PropertyRow = ({
     );
 };
 
+const EMPTY_SCHEMA: SchemaConfig = { type: "object", properties: {} };
+
 /* ─── PropertyEditor (editable property list) ─── */
 
 const PropertyEditor = ({
@@ -175,8 +233,8 @@ const PropertyEditor = ({
     showValue = false
 }: {
     title: string;
-    schema: any;
-    onChange: (newSchema: any) => void;
+    schema: SchemaConfig;
+    onChange: (newSchema: SchemaConfig) => void;
     showValue?: boolean;
 }) => {
     const properties = schema?.properties || {};
@@ -195,7 +253,7 @@ const PropertyEditor = ({
         });
     };
 
-    const updateProperty = (name: string, field: string, value: any) => {
+    const updateProperty = (name: string, field: string, value: string) => {
         onChange({
             ...schema,
             properties: {
@@ -242,11 +300,11 @@ const PropertyEditor = ({
                 </Button>
             </div>
             <div className="space-y-3">
-                {Object.entries(properties).map(([name, config]: [string, any]) => (
+                {Object.entries(properties).map(([name, config]) => (
                     <PropertyRow
                         key={name}
                         name={name}
-                        config={config}
+                        config={config as PropertyConfig}
                         showValue={showValue}
                         onRemove={() => removeProperty(name)}
                         onUpdateProperty={(field, val) => updateProperty(name, field, val)}
@@ -265,8 +323,8 @@ const PropertyEditor = ({
 
 /* ─── read-only property table ─── */
 
-const PropertyTable = ({ title, icon, properties }: { title: string; icon: React.ReactNode; properties: Record<string, any> }) => {
-    const entries = Object.entries(properties || {});
+const PropertyTable = ({ title, icon, properties }: { title: string; icon: React.ReactNode; properties: Record<string, unknown> | undefined | null }) => {
+    const entries = Object.entries(properties || {} as Record<string, unknown>);
     if (entries.length === 0) return null;
 
     return (
@@ -277,20 +335,23 @@ const PropertyTable = ({ title, icon, properties }: { title: string; icon: React
                 <span className="text-[10px] text-muted-foreground/60 ml-auto">{entries.length} field{entries.length !== 1 ? "s" : ""}</span>
             </div>
             <div className="border border-border rounded-md overflow-hidden">
-                {entries.map(([name, config]: [string, any], i) => (
-                    <div
-                        key={name}
-                        className={`flex items-start gap-4 px-3 py-2.5 text-sm ${i % 2 === 0 ? "bg-background" : "bg-muted/30"} ${i < entries.length - 1 ? "border-b border-border" : ""}`}
-                    >
-                        <code className="font-mono text-xs text-foreground/90 min-w-[120px] pt-0.5">{name}</code>
-                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-secondary px-1.5 py-0.5 rounded font-medium shrink-0">
-                            {config.type || "—"}
-                        </span>
-                        <span className="text-xs text-muted-foreground flex-1 leading-relaxed">
-                            {config.description || config.value || "—"}
-                        </span>
-                    </div>
-                ))}
+                {entries.map(([name, config], i) => {
+                    const c = config as PropertyConfig;
+                    return (
+                        <div
+                            key={name}
+                            className={`flex items-start gap-4 px-3 py-2.5 text-sm ${i % 2 === 0 ? "bg-background" : "bg-muted/30"} ${i < entries.length - 1 ? "border-b border-border" : ""}`}
+                        >
+                            <code className="font-mono text-xs text-foreground/90 min-w-[120px] pt-0.5">{name}</code>
+                            <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-secondary px-1.5 py-0.5 rounded font-medium shrink-0">
+                                {typeof config === "string" ? "string" : (c.type || "—")}
+                            </span>
+                            <span className="text-xs text-muted-foreground flex-1 leading-relaxed">
+                                {typeof config === "string" ? config : (c.description || c.value || "—")}
+                            </span>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
@@ -313,7 +374,7 @@ function cloneDeep<T>(obj: T): T {
 
 /* ─── build default form data from integration ─── */
 
-function buildFormData(integration: any) {
+function buildFormData(integration: Integration): FormData {
     return {
         name: integration.name || "",
         description: integration.description || "",
@@ -322,22 +383,25 @@ function buildFormData(integration: any) {
             baseUrl: integration.config?.baseUrl || "",
             headers: integration.config?.headers || {},
         },
-        restTools: (integration.restTools || []).map((tool: any) => ({
+        restTools: (integration.restTools || []).map((tool: RestTool) => ({
             method: tool.method || "GET",
             path: tool.path || "/",
             contentType: tool.contentType || "application/json",
-            headers: tool.headers || {},
+            headers: (tool.headers as Record<string, string>) || ({} as Record<string, string>),
             requestConfig: {
-                pathParams: tool.requestConfig?.pathParams || { type: "object", properties: {} },
-                queryParams: tool.requestConfig?.queryParams || { type: "object", properties: {} },
-                headers: tool.requestConfig?.headers || { type: "object", properties: {} },
-                cookies: tool.requestConfig?.cookies || { type: "object", properties: {} },
-                body: tool.requestConfig?.body || { type: "JSON", schema: { type: "object", properties: {} } },
+                pathParams: (tool.requestConfig?.pathParams as SchemaConfig) || { type: "object", properties: {} },
+                queryParams: (tool.requestConfig?.queryParams as SchemaConfig) || { type: "object", properties: {} },
+                headers: (tool.requestConfig?.headers as SchemaConfig) || { type: "object", properties: {} },
+                cookies: (tool.requestConfig?.cookies as SchemaConfig) || { type: "object", properties: {} },
+                body: {
+                    type: tool.requestConfig?.body?.type || "JSON",
+                    schema: (tool.requestConfig?.body?.schema as SchemaConfig) || { type: "object", properties: {} }
+                },
                 timeoutMs: tool.requestConfig?.timeoutMs || 30000,
             },
             responseConfig: {
                 successStatusCodes: tool.responseConfig?.successStatusCodes || [200],
-                responseSchema: tool.responseConfig?.responseSchema || { type: "object", properties: {} },
+                responseSchema: (tool.responseConfig?.responseSchema as SchemaConfig) || { type: "object", properties: {} },
                 dataPath: tool.responseConfig?.dataPath || "",
                 errorPath: tool.responseConfig?.errorPath || "",
                 strictValidation: tool.responseConfig?.strictValidation || false,
@@ -361,7 +425,7 @@ const IntegrationDetails = () => {
 
     const [activeTab, setActiveTab] = useState("overview");
     const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState<any>(null);
+    const [formData, setFormData] = useState<FormData | null>(null);
 
     // Initialize form data when entering edit mode
     const enterEditMode = () => {
@@ -391,22 +455,31 @@ const IntegrationDetails = () => {
 
     /* ─── tool-level update helpers ─── */
 
-    const updateToolField = (toolIndex: number, field: string, value: any) => {
-        const newTools = [...formData.restTools];
-        (newTools[toolIndex] as any)[field] = value;
-        setFormData({ ...formData, restTools: newTools });
+    const updateToolField = (toolIndex: number, field: keyof FormRestTool, value: unknown) => {
+        setFormData(prev => {
+            if (!prev) return null;
+            const newTools = [...prev.restTools];
+            (newTools[toolIndex] as unknown as Record<string, unknown>)[field as string] = value;
+            return { ...prev, restTools: newTools };
+        });
     };
 
-    const updateToolRequestConfig = (toolIndex: number, field: string, value: any) => {
-        const newTools = [...formData.restTools];
-        (newTools[toolIndex].requestConfig as any)[field] = value;
-        setFormData({ ...formData, restTools: newTools });
+    const updateToolRequestConfig = (toolIndex: number, field: keyof FormRestTool["requestConfig"], value: unknown) => {
+        setFormData(prev => {
+            if (!prev) return null;
+            const newTools = [...prev.restTools];
+            (newTools[toolIndex].requestConfig as unknown as Record<string, unknown>)[field as string] = value;
+            return { ...prev, restTools: newTools };
+        });
     };
 
-    const updateToolResponseConfig = (toolIndex: number, field: string, value: any) => {
-        const newTools = [...formData.restTools];
-        (newTools[toolIndex].responseConfig as any)[field] = value;
-        setFormData({ ...formData, restTools: newTools });
+    const updateToolResponseConfig = (toolIndex: number, field: keyof FormRestTool["responseConfig"], value: unknown) => {
+        setFormData(prev => {
+            if (!prev) return null;
+            const newTools = [...prev.restTools];
+            (newTools[toolIndex].responseConfig as unknown as Record<string, unknown>)[field as string] = value;
+            return { ...prev, restTools: newTools };
+        });
     };
 
     if (isLoading) {
@@ -426,7 +499,7 @@ const IntegrationDetails = () => {
                 </div>
                 <div>
                     <h3 className="text-base font-medium">Integration not found</h3>
-                    <p className="text-sm text-muted-foreground mt-1">We couldn't locate this integration.</p>
+                    <p className="text-sm text-muted-foreground mt-1">We couldn&apos;t locate this integration.</p>
                 </div>
                 <Button asChild variant="outline" size="sm">
                     <Link href="/dashboard/integrations">Back to Integrations</Link>
@@ -453,7 +526,7 @@ const IntegrationDetails = () => {
                                 <Input
                                     className="h-8 text-xl font-medium tracking-tight border-border w-80"
                                     value={formData?.name || ""}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    onChange={(e) => setFormData(prev => prev ? { ...prev, name: e.target.value } : null)}
                                 />
                             ) : (
                                 <h1 className="text-xl font-medium tracking-tight">{integration.name}</h1>
@@ -591,9 +664,12 @@ const IntegrationDetails = () => {
                                         <Input
                                             className="h-8 pl-9 text-xs font-mono border-border"
                                             value={formData?.config?.baseUrl || ""}
-                                            onChange={(e) => setFormData({
-                                                ...formData,
-                                                config: { ...formData.config, baseUrl: e.target.value }
+                                            onChange={(e) => setFormData(prev => {
+                                                if (!prev) return null;
+                                                return {
+                                                    ...prev,
+                                                    config: { ...prev.config, baseUrl: e.target.value }
+                                                };
                                             })}
                                             placeholder="https://api.example.com/v1"
                                         />
@@ -604,7 +680,7 @@ const IntegrationDetails = () => {
                                     <Textarea
                                         className="flex-1 text-sm min-h-[80px] resize-none border-border"
                                         value={formData?.description || ""}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                        onChange={(e) => setFormData(prev => prev ? { ...prev, description: e.target.value } : null)}
                                         placeholder="What can the LLM do with this integration?"
                                     />
                                 </div>
@@ -631,7 +707,7 @@ const IntegrationDetails = () => {
                                 </button>
                             </div>
                             <div className="space-y-2">
-                                {restTools.map((tool: any) => (
+                                {restTools.map((tool) => (
                                     <div key={tool.id} className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-muted/30 border border-border/60">
                                         <MethodBadge method={tool.method} />
                                         <code className="text-xs font-mono text-foreground/80">{tool.path}</code>
@@ -656,7 +732,7 @@ const IntegrationDetails = () => {
                         <div className="p-5">
                             {integration.widgets && integration.widgets.length > 0 ? (
                                 <div className="space-y-2">
-                                    {integration.widgets.map((widget: any) => (
+                                    {integration.widgets.map((widget: Widget) => (
                                         <div
                                             key={widget.id}
                                             className="flex items-center justify-between px-4 py-3 rounded-md hover:bg-muted/40 transition-colors cursor-pointer border border-transparent hover:border-border/60"
@@ -717,7 +793,7 @@ const IntegrationDetails = () => {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {logs.map((log: any) => (
+                                        {logs.map((log: IntegrationLog) => (
                                             <TableRow key={log.id} className="hover:bg-muted/30">
                                                 <TableCell className="text-xs text-muted-foreground font-mono">
                                                     {format(new Date(log.createdAt), "HH:mm:ss, MMM d")}
@@ -764,9 +840,12 @@ const IntegrationDetails = () => {
                                         <Input
                                             className="h-8 pl-9 text-xs font-mono border-border"
                                             value={formData?.config?.baseUrl || ""}
-                                            onChange={(e) => setFormData({
-                                                ...formData,
-                                                config: { ...formData.config, baseUrl: e.target.value }
+                                            onChange={(e) => setFormData(prev => {
+                                                if (!prev) return null;
+                                                return {
+                                                    ...prev,
+                                                    config: { ...prev.config, baseUrl: e.target.value }
+                                                };
                                             })}
                                             placeholder="https://api.example.com/v1"
                                         />
@@ -775,7 +854,7 @@ const IntegrationDetails = () => {
                             </div>
 
                             {/* REST Tools — editable */}
-                            {formData?.restTools?.map((tool: any, toolIndex: number) => (
+                            {formData?.restTools?.map((tool, toolIndex: number) => (
                                 <div key={toolIndex} className="border border-border rounded-lg overflow-hidden">
                                     {/* Tool header — editable */}
                                     <div className="px-5 py-4 bg-muted/20 border-b border-border space-y-4">
@@ -848,33 +927,33 @@ const IntegrationDetails = () => {
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                 <PropertyEditor
                                                     title="Query Parameters"
-                                                    schema={tool.requestConfig.queryParams}
+                                                    schema={(tool.requestConfig.queryParams as SchemaConfig) || EMPTY_SCHEMA}
                                                     onChange={(s) => updateToolRequestConfig(toolIndex, "queryParams", s)}
                                                 />
                                                 <PropertyEditor
                                                     title="Body Schema"
                                                     showValue={true}
-                                                    schema={tool.requestConfig.body?.schema}
-                                                    onChange={(s) => updateToolRequestConfig(toolIndex, "body", { ...tool.requestConfig.body, schema: s })}
+                                                    schema={((tool.requestConfig.body as { schema?: SchemaConfig })?.schema as SchemaConfig) || EMPTY_SCHEMA}
+                                                    onChange={(s) => updateToolRequestConfig(toolIndex, "body", { ...(tool.requestConfig.body as Record<string, unknown>), schema: s })}
                                                 />
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
                                                 <PropertyEditor
                                                     title="Path Parameters"
                                                     showValue={true}
-                                                    schema={tool.requestConfig.pathParams}
+                                                    schema={(tool.requestConfig.pathParams as SchemaConfig) || EMPTY_SCHEMA}
                                                     onChange={(s) => updateToolRequestConfig(toolIndex, "pathParams", s)}
                                                 />
                                                 <PropertyEditor
                                                     title="Headers"
                                                     showValue={true}
-                                                    schema={tool.requestConfig.headers}
+                                                    schema={(tool.requestConfig.headers as SchemaConfig) || EMPTY_SCHEMA}
                                                     onChange={(s) => updateToolRequestConfig(toolIndex, "headers", s)}
                                                 />
                                                 <PropertyEditor
                                                     title="Cookies"
                                                     showValue={true}
-                                                    schema={tool.requestConfig.cookies}
+                                                    schema={(tool.requestConfig.cookies as SchemaConfig) || EMPTY_SCHEMA}
                                                     onChange={(s) => updateToolRequestConfig(toolIndex, "cookies", s)}
                                                 />
                                             </div>
@@ -933,7 +1012,7 @@ const IntegrationDetails = () => {
                                             </div>
                                             <PropertyEditor
                                                 title="Response Schema"
-                                                schema={tool.responseConfig.responseSchema}
+                                                schema={(tool.responseConfig.responseSchema as SchemaConfig) || EMPTY_SCHEMA}
                                                 onChange={(s) => updateToolResponseConfig(toolIndex, "responseSchema", s)}
                                             />
                                         </div>
@@ -973,7 +1052,7 @@ const IntegrationDetails = () => {
                             </div>
 
                             {/* REST Tools */}
-                            {restTools.map((tool: any, toolIndex: number) => (
+                            {restTools.map((tool) => (
                                 <div key={tool.id} className="border border-border rounded-lg overflow-hidden">
                                     {/* Tool header */}
                                     <div className="flex items-center gap-3 px-5 py-4 bg-muted/20 border-b border-border">
@@ -1007,35 +1086,35 @@ const IntegrationDetails = () => {
                                                 <PropertyTable
                                                     title="Query Parameters"
                                                     icon={<Hash className="w-3.5 h-3.5 text-muted-foreground" />}
-                                                    properties={tool.requestConfig?.queryParams?.properties}
+                                                    properties={(tool.requestConfig?.queryParams as SchemaConfig)?.properties}
                                                 />
                                                 <PropertyTable
                                                     title="Path Parameters"
                                                     icon={<Link2 className="w-3.5 h-3.5 text-muted-foreground" />}
-                                                    properties={tool.requestConfig?.pathParams?.properties}
+                                                    properties={(tool.requestConfig?.pathParams as SchemaConfig)?.properties}
                                                 />
                                                 <PropertyTable
                                                     title="Headers"
                                                     icon={<Code2 className="w-3.5 h-3.5 text-muted-foreground" />}
-                                                    properties={tool.requestConfig?.headers?.properties}
+                                                    properties={(tool.requestConfig?.headers as SchemaConfig)?.properties}
                                                 />
                                                 <PropertyTable
                                                     title="Cookies"
                                                     icon={<Cookie className="w-3.5 h-3.5 text-muted-foreground" />}
-                                                    properties={tool.requestConfig?.cookies?.properties}
+                                                    properties={(tool.requestConfig?.cookies as SchemaConfig)?.properties}
                                                 />
                                                 <PropertyTable
                                                     title="Body Schema"
                                                     icon={<FileJson className="w-3.5 h-3.5 text-muted-foreground" />}
-                                                    properties={tool.requestConfig?.body?.schema?.properties}
+                                                    properties={(tool.requestConfig?.body?.schema as SchemaConfig)?.properties}
                                                 />
                                             </div>
                                             {/* No request config note */}
-                                            {(!tool.requestConfig?.queryParams?.properties || Object.keys(tool.requestConfig.queryParams.properties).length === 0) &&
-                                                (!tool.requestConfig?.pathParams?.properties || Object.keys(tool.requestConfig.pathParams.properties).length === 0) &&
-                                                (!tool.requestConfig?.headers?.properties || Object.keys(tool.requestConfig.headers.properties).length === 0) &&
-                                                (!tool.requestConfig?.cookies?.properties || Object.keys(tool.requestConfig.cookies.properties).length === 0) &&
-                                                (!tool.requestConfig?.body?.schema?.properties || Object.keys(tool.requestConfig.body.schema.properties).length === 0) && (
+                                            {(!(tool.requestConfig?.queryParams as SchemaConfig)?.properties || Object.keys((tool.requestConfig.queryParams as SchemaConfig).properties).length === 0) &&
+                                                (!(tool.requestConfig?.pathParams as SchemaConfig)?.properties || Object.keys((tool.requestConfig.pathParams as SchemaConfig).properties).length === 0) &&
+                                                (!(tool.requestConfig?.headers as SchemaConfig)?.properties || Object.keys((tool.requestConfig.headers as SchemaConfig).properties).length === 0) &&
+                                                (!(tool.requestConfig?.cookies as SchemaConfig)?.properties || Object.keys((tool.requestConfig.cookies as SchemaConfig).properties).length === 0) &&
+                                                (!(tool.requestConfig?.body?.schema as SchemaConfig)?.properties || Object.keys((tool.requestConfig.body?.schema as SchemaConfig).properties).length === 0) && (
                                                     <p className="text-xs text-muted-foreground/60 italic py-4 text-center">No request parameters configured.</p>
                                                 )}
                                         </div>
@@ -1075,7 +1154,7 @@ const IntegrationDetails = () => {
                                             <PropertyTable
                                                 title="Response Schema"
                                                 icon={<FileJson className="w-3.5 h-3.5 text-muted-foreground" />}
-                                                properties={tool.responseConfig?.responseSchema?.properties}
+                                                properties={(tool.responseConfig?.responseSchema as SchemaConfig)?.properties}
                                             />
                                         </div>
                                     </div>

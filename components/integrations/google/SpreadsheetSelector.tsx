@@ -33,8 +33,8 @@ export function SpreadsheetSelector({ onSelect, currentValue }: SpreadsheetSelec
                 if (!res.ok) throw new Error("Failed to fetch spreadsheets");
                 const data = await res.json();
                 setSpreadsheets(data.files || []);
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err: unknown) {
+                setError((err as Error).message);
             } finally {
                 setLoading(false);
             }

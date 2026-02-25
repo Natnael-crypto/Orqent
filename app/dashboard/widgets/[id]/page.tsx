@@ -47,6 +47,8 @@ import { Separator } from "@/components/ui/separator";
 import { SimulatedChat } from "@/components/widgets/SimulatedChat";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { Widget, WidgetFormData, UiCustomization } from "@/types/widgets";
+import { Integration } from "@/hooks/services/integrationService";
 
 interface WidgetDetailPageProps {
     params: Promise<{ id: string }>;
@@ -57,15 +59,15 @@ export default function WidgetDetailPage({ params }: WidgetDetailPageProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [integrations, setIntegrations] = useState<any[]>([]);
+    const [integrations, setIntegrations] = useState<Integration[]>([]);
     const [loadingIntegrations, setLoadingIntegrations] = useState(false);
-    const [uiCustomizations, setUiCustomizations] = useState<any[]>([]);
+    const [uiCustomizations, setUiCustomizations] = useState<UiCustomization[]>([]);
     const [loadingCustomizations, setLoadingCustomizations] = useState(false);
     const [copied, setCopied] = useState(false);
     const [scriptType, setScriptType] = useState<"html" | "react">("html");
 
-    const [widget, setWidget] = useState<any>(null);
-    const [formData, setFormData] = useState<any>({
+    const [widget, setWidget] = useState<Widget | null>(null);
+    const [formData, setFormData] = useState<WidgetFormData>({
         name: "",
         description: "",
         model: "gpt-4o",
@@ -97,10 +99,10 @@ export default function WidgetDetailPage({ params }: WidgetDetailPageProps) {
                 temperature: data.temperature,
                 maxTokens: data.maxTokens,
                 uiCustomizationId: data.uiCustomizationId || "",
-                allowedDomains: data.allowedDomains?.map((d: any) => d.domain) || [],
-                integrationIds: data.integrationIds?.map((i: any) => i.id) || []
+                allowedDomains: data.allowedDomains?.map((d: { domain: string }) => d.domain) || [],
+                integrationIds: data.integrationIds?.map((i: { id: string }) => i.id) || []
             });
-        } catch (error) {
+        } catch (error: unknown) {
             toast({ title: "Error", description: "Failed to load widget details", variant: "destructive" });
             router.push("/dashboard/widgets");
         } finally {
@@ -116,7 +118,7 @@ export default function WidgetDetailPage({ params }: WidgetDetailPageProps) {
                 const data = await res.json();
                 setIntegrations(data.data || []);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Error fetching integrations:", error);
         } finally {
             setLoadingIntegrations(false);
@@ -131,7 +133,7 @@ export default function WidgetDetailPage({ params }: WidgetDetailPageProps) {
                 const data = await res.json();
                 setUiCustomizations(data || []);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Error fetching customizations:", error);
         } finally {
             setLoadingCustomizations(false);
@@ -154,7 +156,7 @@ export default function WidgetDetailPage({ params }: WidgetDetailPageProps) {
             } else {
                 toast({ title: "Error", description: "Failed to update widget", variant: "destructive" });
             }
-        } catch (error) {
+        } catch (error: unknown) {
             toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
         } finally {
             setSaving(false);
@@ -162,10 +164,10 @@ export default function WidgetDetailPage({ params }: WidgetDetailPageProps) {
     };
 
     const toggleIntegration = (id: string) => {
-        setFormData((prev: any) => ({
+        setFormData((prev) => ({
             ...prev,
             integrationIds: prev.integrationIds.includes(id)
-                ? prev.integrationIds.filter((iid: string) => iid !== id)
+                ? prev.integrationIds.filter((iid) => iid !== id)
                 : [...prev.integrationIds, id]
         }));
     };
@@ -232,7 +234,7 @@ export default function WidgetDetailPage({ params }: WidgetDetailPageProps) {
                             <Card className="border-muted/60 shadow-none">
                                 <CardHeader>
                                     <CardTitle className="text-xl">Basic Information</CardTitle>
-                                    <CardDescription>Update your widget's display name and deployment settings.</CardDescription>
+                                    <CardDescription>Update your widget&apos;s display name and deployment settings.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <div className="grid gap-4">

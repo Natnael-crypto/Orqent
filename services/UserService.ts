@@ -4,6 +4,8 @@ import { UserSchema, UserUpdateSchema } from "@/lib/validation";
 import { ApiError } from "@/lib/api-error";
 import { z } from "zod";
 
+import { Prisma } from "@prisma/client";
+
 export class UserService {
     async register(data: z.infer<typeof UserSchema>) {
         // Validate input
@@ -57,7 +59,7 @@ export class UserService {
         // Only allow updating name and companyName for now
         const { name, companyName } = data;
 
-        const updateData: any = {};
+        const updateData: Prisma.UserUpdateInput = {};
         if (name !== undefined) updateData.name = name;
         if (companyName !== undefined) updateData.companyName = companyName;
 

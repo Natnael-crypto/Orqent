@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { loginUser, registerUser } from "@/hooks/services/authService";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { ApiError } from "@/types/common";
 
 export function useRegisterUser() {
   const router = useRouter();
@@ -16,8 +17,8 @@ export function useRegisterUser() {
       });
       router.push("/dashboard");
     },
-    onError: (err: any) => {
-      const errorMessage = err.response?.data?.error || err.message || "Registration failed";
+    onError: (err: unknown) => {
+      const errorMessage = (err as ApiError).response?.data?.error || (err as Error).message || "Registration failed";
       toast({
         title: "Registration Error",
         description: errorMessage,
@@ -40,8 +41,8 @@ export function useLoginUser() {
       });
       router.push("/dashboard");
     },
-    onError: (err: any) => {
-      const errorMessage = err.response?.data?.error || err.message || "Login failed";
+    onError: (err: unknown) => {
+      const errorMessage = (err as ApiError).response?.data?.error || (err as Error).message || "Login failed";
       toast({
         title: "Login Error",
         description: errorMessage,

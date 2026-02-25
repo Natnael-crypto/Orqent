@@ -10,7 +10,7 @@ interface Message {
     id: string;
     role: string;
     content: string;
-    createdAt: string;
+    createdAt: string | Date;
 }
 
 interface ChatHistoryProps {

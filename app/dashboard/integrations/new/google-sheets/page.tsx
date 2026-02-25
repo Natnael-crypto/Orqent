@@ -96,8 +96,8 @@ export default function GoogleSheetsSetup() {
 
             toast.success("Configuration saved successfully!");
             router.push("/dashboard/integrations");
-        } catch (err: any) {
-            toast.error(err.message || "Failed to save configuration");
+        } catch (err: unknown) {
+            toast.error((err as Error).message || "Failed to save configuration");
         } finally {
             setSaving(false);
         }

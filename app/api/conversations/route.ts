@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         });
 
         return NextResponse.json(result);
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }

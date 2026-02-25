@@ -1,15 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, Widget, UICustomization, AllowedDomain, Integration } from "@prisma/client";
 
+export const STANDARD_WIDGET_INCLUDE = {
+    uiCustomization: true,
+    allowedDomains: true,
+    integrations: true,
+} as const;
+
 export class WidgetRepository {
-    async findById(id: string): Promise<(Widget & { uiCustomization: UICustomization | null; allowedDomains: AllowedDomain[]; integrations: Integration[] }) | null> {
+    async findById(id: string) {
         return prisma.widget.findUnique({
             where: { id },
-            include: {
-                uiCustomization: true,
-                allowedDomains: true,
-                integrations: true,
-            },
+            include: STANDARD_WIDGET_INCLUDE,
         });
     }
 
@@ -42,24 +44,8 @@ export class WidgetRepository {
         });
     }
 
-    async findAll(params: {
-        skip?: number;
-        take?: number;
-        where?: Prisma.WidgetWhereInput;
-        orderBy?: Prisma.WidgetOrderByWithRelationInput;
-    }) {
-        const { skip, take, where, orderBy } = params;
-        return prisma.widget.findMany({
-            skip,
-            take,
-            where,
-            orderBy,
-            include: {
-                uiCustomization: true,
-                allowedDomains: true,
-                integrations: true,
-            },
-        });
+    async findAll<T extends Prisma.WidgetFindManyArgs>(args: T) {
+        return prisma.widget.findMany(args);
     }
 
     async count(where?: Prisma.WidgetWhereInput): Promise<number> {

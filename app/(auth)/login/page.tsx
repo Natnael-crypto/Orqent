@@ -68,7 +68,7 @@ export default function LoginPage() {
 
                         <div className="pt-8 border-t border-border/50">
                             <p className="text-sm text-muted-foreground italic">
-                                "Orqent transformed how we handle customer support. The AI agents are incredibly intuitive."
+                                &quot;Orqent transformed how we handle customer support. The AI agents are incredibly intuitive.&quot;
                             </p>
                             <p className="mt-2 text-sm font-medium">— Sarah Chen, CTO at TechFlow</p>
                         </div>
@@ -134,7 +134,7 @@ export default function LoginPage() {
                             </CardContent>
                             <CardFooter className="flex flex-col space-y-4 pt-4 pb-8">
                                 <div className="text-center text-sm text-muted-foreground">
-                                    Don't have an account?{" "}
+                                    Don&apos;t have an account?{" "}
                                     <Link href="/register" className="text-primary font-medium hover:underline underline-offset-4">
                                         Sign up
                                     </Link>

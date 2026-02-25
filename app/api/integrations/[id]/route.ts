@@ -18,7 +18,7 @@ export async function GET(
         const integration = await integrationService.getIntegrationById(user.id, id);
 
         return NextResponse.json(integration);
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }
@@ -39,7 +39,7 @@ export async function PATCH(
         const updated = await integrationService.updateIntegration(user.id, id, body);
 
         return NextResponse.json(updated);
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }
@@ -59,7 +59,7 @@ export async function DELETE(
         await integrationService.deleteIntegration(user.id, id);
 
         return NextResponse.json({ message: 'Integration deleted successfully', id });
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }

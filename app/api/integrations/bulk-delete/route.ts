@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         await integrationService.bulkDeleteIntegrations(user.id, ids);
 
         return NextResponse.json({ message: 'Integrations deleted successfully' });
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }

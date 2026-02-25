@@ -1,10 +1,9 @@
-import { Widget, UICustomization, AllowedDomain, Integration } from "@prisma/client";
+import { Integration } from "@/hooks/services/integrationService";
+export type { Integration };
 
-export type Widgets = Widget;
-export type { UICustomization, AllowedDomain };
-
-// Request types can stay as interfaces or infer from Zod
-export interface UICustomizationRequest {
+export interface UiCustomization {
+    id: string;
+    userId: string;
     name: string;
     chatButtonText: string;
     agentName: string;
@@ -15,26 +14,40 @@ export interface UICustomizationRequest {
     fontSize: number;
     height: number;
     width: number;
-    position: string; // "left" | "right"
+    position: "left" | "right";
     chatButtonLogoUrl?: string | null;
     agentAvatarUrl?: string | null;
     showPoweredBy: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
-export interface WidgetRequest {
+export interface Widget {
+    id: string;
+    userId: string;
     name: string;
-    description?: string;
+    description: string | null;
     model: string;
     systemPrompt: string;
-    temperature?: number;
-    maxTokens?: number;
-    uiCustomizationId?: string;
-    allowedDomains?: string[];
-    integrationIds?: string[];
+    temperature: number;
+    maxTokens: number;
+    status: "ACTIVE" | "PAUSED" | "DRAFT";
+    uiCustomizationId: string | null;
+    uiCustomization?: UiCustomization;
+    allowedDomains: { id: string; domain: string }[];
+    integrations: Integration[];
+    createdAt: string;
+    updatedAt: string;
 }
 
-export type WidgetResponse = Widget & {
-    uiCustomization: UICustomization | null;
-    allowedDomains: AllowedDomain[];
-    integrations: Integration[];
+export interface WidgetFormData {
+    name: string;
+    description: string;
+    model: string;
+    systemPrompt: string;
+    temperature: number;
+    maxTokens: number;
+    uiCustomizationId: string;
+    allowedDomains: string[];
+    integrationIds: string[];
 }

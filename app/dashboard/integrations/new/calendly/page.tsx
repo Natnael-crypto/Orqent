@@ -91,7 +91,7 @@ const CalendlyPlaceholder = () => {
                 <div className="space-y-1">
                     <h3 className="text-lg font-semibold">Looking for more?</h3>
                     <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                        Calendly's V2 API is available for REST integration. You can already connect it using
+                        Calendly&apos;s V2 API is available for REST integration. You can already connect it using
                         our power-user <strong>REST API</strong> builder.
                     </p>
                 </div>

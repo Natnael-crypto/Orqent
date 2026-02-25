@@ -55,7 +55,7 @@ const UICustomizationForm = () => {
             } else {
                 toast({ title: "Upload Error", description: "Failed to upload image", variant: "destructive" });
             }
-        } catch (error) {
+        } catch (error: unknown) {
             toast({ title: "Error", description: "Something went wrong during upload", variant: "destructive" });
         } finally {
             setUploading(false);
@@ -85,7 +85,7 @@ const UICustomizationForm = () => {
                             agentAvatarUrl: data.agentAvatarUrl || "",
                         });
                     }
-                } catch (error) {
+                } catch (error: unknown) {
                     console.error("Error fetching customization:", error);
                 } finally {
                     setLoading(false);
@@ -131,7 +131,7 @@ const UICustomizationForm = () => {
             } else {
                 toast({ title: "Error", description: "Failed to save customization", variant: "destructive" });
             }
-        } catch (error) {
+        } catch (error: unknown) {
             toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
         } finally {
             setSaving(false);

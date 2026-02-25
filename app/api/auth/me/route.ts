@@ -23,7 +23,7 @@ export async function GET() {
         }
 
         return NextResponse.json({ user: result.rows[0] }, { status: 200 });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Me route error:', error);
         return NextResponse.json(
             { error: 'Internal server error' },

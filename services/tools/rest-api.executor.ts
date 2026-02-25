@@ -68,7 +68,7 @@ export class RestApiExecutor
                     tool.requestConfig.queryParams.properties
                 )) {
                     // Prefer static config value, then AI-provided arg
-                    let value = (paramDef as any).value ?? aiArgs[param];
+                    const value = paramDef.value ?? aiArgs[param];
 
                     // Defensive: If schema says number/integer but we got empty string, skip it
                     if ((paramDef.type === 'number' || paramDef.type === 'integer') && value === '') {

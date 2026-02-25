@@ -6,6 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
+import { Integration, UiCustomization } from "@/types/widgets";
 
 const steps = ["Basic Info", "AI Configuration", "Integrations", "UI Selection", "Install Script"];
 
@@ -14,9 +15,9 @@ const WidgetCreation = () => {
     const [step, setStep] = useState(0);
     const [creating, setCreating] = useState(false);
     const [copied, setCopied] = useState(false);
-    const [integrations, setIntegrations] = useState<any[]>([]);
+    const [integrations, setIntegrations] = useState<Integration[]>([]);
     const [loadingIntegrations, setLoadingIntegrations] = useState(false);
-    const [uiCustomizations, setUiCustomizations] = useState<any[]>([]);
+    const [uiCustomizations, setUiCustomizations] = useState<UiCustomization[]>([]);
     const [loadingCustomizations, setLoadingCustomizations] = useState(false);
 
     const [config, setConfig] = useState({
@@ -41,7 +42,7 @@ const WidgetCreation = () => {
                 const data = await res.json();
                 setIntegrations(data.data);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Error fetching integrations:", error);
         } finally {
             setLoadingIntegrations(false);
@@ -56,7 +57,7 @@ const WidgetCreation = () => {
                 const data = await res.json();
                 setUiCustomizations(data);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Error fetching customizations:", error);
         } finally {
             setLoadingCustomizations(false);
@@ -99,7 +100,7 @@ const WidgetCreation = () => {
             } else {
                 toast({ title: "Error", description: "Failed to publish widget", variant: "destructive" });
             }
-        } catch (error) {
+        } catch (error: unknown) {
             toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
         } finally {
             setCreating(false);

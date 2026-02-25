@@ -1,12 +1,4 @@
-/**
- * ─────────────────────────────────────────────────────────────────────────────
- * Tool Abstraction Layer — Shared Types
- *
- * Every tool executor (REST API, Google Sheets, SQL, Slack, …) must implement
- * the `ToolExecutor` interface below.  The `ToolRegistry` picks the right
- * executor at runtime based on the integration type string.
- * ─────────────────────────────────────────────────────────────────────────────
- */
+import { Prisma } from '@prisma/client';
 
 // ─── Result returned by any executor ─────────────────────────────────────────
 
@@ -39,7 +31,7 @@ export interface RestToolDefinition {
     method: string;
     path: string;
     contentType: string;
-    headers?: Record<string, string> | null;
+    headers?: Prisma.JsonValue;
     requestConfig: {
         pathParams?: {
             type: string;
@@ -51,7 +43,7 @@ export interface RestToolDefinition {
         };
         headers?: {
             type: string;
-            properties: Record<string, { value?: string }>;
+            properties: Record<string, { value?: string, type?: string, description?: string }>;
         };
         body?: {
             type: string;

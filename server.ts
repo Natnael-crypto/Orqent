@@ -5,6 +5,21 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { prisma } from './lib/prisma.js';
 import { v4 as uuidv4 } from 'uuid';
 import * as dotenv from 'dotenv';
+import { AllowedDomain, Message, Conversation, Prisma } from "@prisma/client";
+
+type FullWidget = Prisma.WidgetGetPayload<{
+    include: {
+        allowedDomains: true,
+        uiCustomization: true,
+        integrations: {
+            include: {
+                restTools: true
+            }
+        }
+    }
+}>;
+
+type FullConversation = Conversation & { messages?: Message[] };
 
 import {
     getCachedWidget, setCachedWidget,
@@ -12,7 +27,7 @@ import {
     getCachedMessages, setCachedMessages, appendCachedMessage,
 } from './lib/cache.js';
 
-import { runAiAgent } from './services/ai-agent.js';
+import { runAiAgent, IntegrationWithTools } from './services/ai-agent.js';
 
 dotenv.config();
 
@@ -72,10 +87,10 @@ app.prepare().then(() => {
 
         try {
             // ── 1. Load Widget (Redis → DB fallback) ────────────────────────────
-            let widget = await getCachedWidget(widgetId);
+            let widget = await getCachedWidget(widgetId) as FullWidget | null;
 
             if (!widget) {
-                widget = await (prisma as any).widget.findUnique({
+                widget = await prisma.widget.findUnique({
                     where: { id: widgetId },
                     include: {
                         allowedDomains: true,
@@ -104,7 +119,7 @@ app.prepare().then(() => {
             // ── 2. Domain Verification ──────────────────────────────────────────
             const origin = req.headers.origin || req.headers.referer;
             if (origin && widget.allowedDomains && widget.allowedDomains.length > 0) {
-                const isAllowed = widget.allowedDomains.some((ad: any) => origin.includes(ad.domain));
+                const isAllowed = widget.allowedDomains.some((ad: AllowedDomain) => origin.includes(ad.domain));
                 if (!isAllowed) {
                     ws.close(1008, 'Domain not allowed');
                     return;
@@ -112,8 +127,8 @@ app.prepare().then(() => {
             }
 
             // ── 3. Load or Create Conversation ──────────────────────────────────
-            let conversation: any = null;
-            let messages: any[] = [];
+            let conversation: (Conversation & { messages?: Message[] }) | null = null;
+            let messages: Message[] = [];
 
             if (conversationIdParam) {
                 // Try Redis first
@@ -124,7 +139,7 @@ app.prepare().then(() => {
                     messages = cachedMessages;
                 } else {
                     // Cache miss → fetch from DB
-                    conversation = await (prisma as any).conversation.findUnique({
+                    conversation = await prisma.conversation.findUnique({
                         where: { id: conversationIdParam },
                         include: { messages: { orderBy: { createdAt: 'asc' }, take: 100 } },
                     });
@@ -150,7 +165,7 @@ app.prepare().then(() => {
                 // Get welcome message from widget config or use fallback
                 const welcomeMessage = widget.uiCustomization?.welcomeMessage || 'Hello! How can I help you?';
 
-                conversation = await (prisma as any).conversation.create({
+                conversation = await prisma.conversation.create({
                     data: {
                         widgetId,
                         visitorId: visitorId as string,
@@ -218,7 +233,7 @@ app.prepare().then(() => {
                         if (!content) return;
 
                         // ── 5a. Persist user message to DB ───────────────────────
-                        const userMessage = await (prisma as any).message.create({
+                        const userMessage = await prisma.message.create({
                             data: {
                                 conversationId: info.conversationId,
                                 role: 'user',
@@ -227,7 +242,7 @@ app.prepare().then(() => {
                         });
 
                         // ── 5b. Update conversation lastMessage in DB ─────────────
-                        await (prisma as any).conversation.update({
+                        await prisma.conversation.update({
                             where: { id: info.conversationId },
                             data: { lastMessage: content, updatedAt: new Date() },
                         });
@@ -254,15 +269,15 @@ app.prepare().then(() => {
                         // Fetch current messages from cache (includes the one we just added)
                         const cachedMsgs = await getCachedMessages(info.conversationId);
                         const historyForAi = (cachedMsgs ?? [])
-                            .filter((m: any) => m.role === 'user' || m.role === 'assistant')
+                            .filter((m: Message) => m.role === 'user' || m.role === 'assistant')
                             .slice(-12) // Optimize context: keep last 12 turns (6 user/assistant pairs)
-                            .map((m: any) => ({ role: m.role, content: m.content }));
+                            .map((m: Message) => ({ role: m.role, content: m.content }));
 
                         // Remove the last entry (the new user message) since runAiAgent adds it
                         const conversationHistory = historyForAi.slice(0, -1);
 
                         // Re-fetch widget from cache (may include integrations if cached as full object)
-                        const widgetWithIntegrations = await getCachedWidget(info.widgetId) ?? widget;
+                        const widgetWithIntegrations = (await getCachedWidget(info.widgetId) as FullWidget | null) ?? widget;
 
                         // ── 5g. Run Groq AI Agent ─────────────────────────────────
                         try {
@@ -273,7 +288,7 @@ app.prepare().then(() => {
                                 maxTokens: widgetWithIntegrations.maxTokens,
                                 conversationHistory,
                                 userMessage: content,
-                                integrations: widgetWithIntegrations.integrations ?? [],
+                                integrations: widgetWithIntegrations.integrations as unknown as IntegrationWithTools[] ?? [],
                                 conversationId: info.conversationId,
                                 // ── Progress callback: notify client when a tool is being called
                                 onToolCall: (toolName, args) => {
@@ -288,7 +303,7 @@ app.prepare().then(() => {
                             });
 
                             // ── 5h. Persist AI response to DB ─────────────────────
-                            const aiMessage = await (prisma as any).message.create({
+                            const aiMessage = await prisma.message.create({
                                 data: {
                                     conversationId: info.conversationId,
                                     role: 'assistant',
@@ -301,7 +316,7 @@ app.prepare().then(() => {
                             });
 
                             // ── 5i. Update conversation with AI response in DB ─────
-                            await (prisma as any).conversation.update({
+                            await prisma.conversation.update({
                                 where: { id: info.conversationId },
                                 data: { lastMessage: aiResult.content, updatedAt: new Date() },
                             });
@@ -323,8 +338,9 @@ app.prepare().then(() => {
                                     createdAt: aiMessage.createdAt,
                                 }));
                             }
-                        } catch (aiError: any) {
-                            console.error('[AI Agent] Error:', aiError?.message ?? aiError);
+                        } catch (aiError) {
+                            const errorMessage = aiError instanceof Error ? aiError.message : String(aiError);
+                            console.error('[AI Agent] Error:', errorMessage);
 
                             if (ws.readyState === WebSocket.OPEN) {
                                 ws.send(JSON.stringify({ type: 'typing', status: false }));
@@ -335,7 +351,7 @@ app.prepare().then(() => {
                             }
                         }
                     }
-                } catch (error) {
+                } catch (error: unknown) {
                     console.error('[WS] Error handling message:', error);
                     if (ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ type: 'error', message: 'Failed to process message' }));
@@ -343,7 +359,7 @@ app.prepare().then(() => {
                 }
             });
 
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('[WS] Connection error:', error);
             ws.close(1011, 'Internal server error');
         }

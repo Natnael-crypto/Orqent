@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
         const result = await integrationService.getIntegrations(user.id, page, limit, search, status, type);
 
         return NextResponse.json(result);
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         const integration = await integrationService.createIntegration(user.id, body);
 
         return NextResponse.json(integration, { status: 201 });
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }

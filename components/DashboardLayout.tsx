@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import {
     LayoutDashboard, MessageSquare, MessagesSquare, BarChart3,
-    Activity, Puzzle, CreditCard, Settings, ChevronDown, ChevronLeft, ChevronRight, Plus, Menu, Palette
+    Activity, Puzzle, CreditCard, Settings, ChevronDown, ChevronLeft, ChevronRight, Plus, Menu, Palette,
+    LucideIcon
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -32,7 +33,7 @@ const settingsNav = [
     { label: "Account Settings", path: "/dashboard/settings", icon: Settings },
 ];
 
-const NavItem = ({ item, pathname, collapsed }: { item: { label: string; path: string; icon: any }; pathname: string; collapsed: boolean }) => {
+const NavItem = ({ item, pathname, collapsed }: { item: { label: string; path: string; icon: LucideIcon }; pathname: string; collapsed: boolean }) => {
     const isActive = pathname === item.path;
     const Icon = item.icon;
     return (
@@ -65,7 +66,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     const data = await res.json();
                     setUser(data.user);
                 }
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error("Failed to fetch user in layout:", error);
             }
         };

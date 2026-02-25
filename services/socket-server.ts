@@ -2,6 +2,15 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { prisma } from '../lib/prisma.js';
 import { v4 as uuidv4 } from 'uuid';
 import * as dotenv from 'dotenv';
+import { Prisma, Widget, Conversation, Message, AllowedDomain } from '@prisma/client';
+
+type FullWidget = Prisma.WidgetGetPayload<{
+    include: { allowedDomains: true, uiCustomization: true }
+}>;
+
+type FullConversation = Prisma.ConversationGetPayload<{
+    include: { messages: true }
+}>;
 
 dotenv.config();
 
@@ -16,7 +25,7 @@ const PING_INTERVAL = 30000; // 30 seconds
 console.log('WebSocket server for Chat Widget started on port 8080');
 
 // Simple cache for widget configurations to reduce DB load (LRU could be better for 100K users)
-const widgetCache = new Map<string, { data: any, timestamp: number }>();
+const widgetCache = new Map<string, { data: FullWidget, timestamp: number }>();
 const CACHE_TTL = 60000; // 1 minute
 
 // Store connection info: socket -> { widgetId, conversationId, visitorId }
@@ -51,11 +60,11 @@ wss.on('connection', async (ws: ExtendedWebSocket, req) => {
 
     try {
         // Get widget from cache or DB
-        let widget = widgetCache.get(widgetId)?.data;
+        let widget: FullWidget | null | undefined = widgetCache.get(widgetId)?.data;
         const now = Date.now();
 
         if (!widget || (now - widgetCache.get(widgetId)!.timestamp > CACHE_TTL)) {
-            widget = await (prisma as any).widget.findUnique({
+            widget = await prisma.widget.findUnique({
                 where: { id: widgetId },
                 include: { allowedDomains: true, uiCustomization: true }
             });
@@ -72,7 +81,7 @@ wss.on('connection', async (ws: ExtendedWebSocket, req) => {
         // Domain verification logic (in production, check req.headers.origin or Referer)
         const origin = req.headers.origin || req.headers.referer;
         if (origin && widget.allowedDomains.length > 0) {
-            const isAllowed = widget.allowedDomains.some((ad: any) => origin.includes(ad.domain));
+            const isAllowed = widget.allowedDomains.some((ad: AllowedDomain) => origin.includes(ad.domain));
             if (!isAllowed) {
                 ws.close(1008, 'Domain not allowed');
                 return;
@@ -80,11 +89,11 @@ wss.on('connection', async (ws: ExtendedWebSocket, req) => {
         }
 
         // Initialize or get conversation
-        let conversation: any = null;
+        let conversation: FullConversation | null = null;
 
         // Requirement: "if there is no conversation iD in the query if there is load the message"
         if (conversationIdParam) {
-            conversation = await (prisma as any).conversation.findUnique({
+            conversation = await prisma.conversation.findUnique({
                 where: { id: conversationIdParam },
                 include: { messages: { orderBy: { createdAt: 'asc' }, take: 50 } }
             });
@@ -97,12 +106,12 @@ wss.on('connection', async (ws: ExtendedWebSocket, req) => {
 
         // Create new if none found or none provided
         if (!conversation) {
-            conversation = await (prisma as any).conversation.create({
+            conversation = await prisma.conversation.create({
                 data: {
                     widgetId,
                     visitorId: visitorId as string,
                     metadata: {
-                        userAgent: req.headers['user-agent'],
+                        userAgent: req.headers['user-agent'] as string,
                         ip: req.socket.remoteAddress
                     }
                 },
@@ -138,7 +147,7 @@ wss.on('connection', async (ws: ExtendedWebSocket, req) => {
 
                 if (payload.type === 'message') {
                     // Save user message
-                    const userMessage = await (prisma as any).message.create({
+                    const userMessage = await prisma.message.create({
                         data: {
                             conversationId: info.conversationId,
                             role: 'user',
@@ -147,7 +156,7 @@ wss.on('connection', async (ws: ExtendedWebSocket, req) => {
                     });
 
                     // Update conversation last message & timestamp
-                    await (prisma as any).conversation.update({
+                    await prisma.conversation.update({
                         where: { id: info.conversationId },
                         data: { lastMessage: payload.content, updatedAt: new Date() }
                     });
@@ -174,7 +183,7 @@ wss.on('connection', async (ws: ExtendedWebSocket, req) => {
                         ];
                         const aiResponseContent = responses[Math.floor(Math.random() * responses.length)];
 
-                        const aiMessage = await (prisma as any).message.create({
+                        const aiMessage = await prisma.message.create({
                             data: {
                                 conversationId: info.conversationId,
                                 role: 'assistant',
@@ -194,13 +203,13 @@ wss.on('connection', async (ws: ExtendedWebSocket, req) => {
                         }
                     }, 1000 + Math.random() * 1000);
                 }
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error('Error handling message:', error);
                 ws.send(JSON.stringify({ type: 'error', message: 'Failed to process message' }));
             }
         });
 
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Connection error:', error);
         ws.close(1011, 'Internal server error');
     }

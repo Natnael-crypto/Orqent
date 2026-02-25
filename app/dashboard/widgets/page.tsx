@@ -49,7 +49,7 @@ const ChatWidgets = () => {
                     totalPages: data.pagination.totalPages
                 }));
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Error fetching widgets:", error);
         } finally {
             setLoading(false);

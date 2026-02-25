@@ -85,7 +85,7 @@ async function setupWidgetsDatabase() {
         `);
 
         console.log('Widgets database setup complete.');
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Widgets database setup failed:', error);
     }
 }

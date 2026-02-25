@@ -23,7 +23,7 @@ export function verifyToken(token: string): string | object | null {
     try {
         return verify(token, SECRET_KEY);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch (error: unknown) {
         return null;
     }
 }
@@ -65,7 +65,7 @@ export async function getUserFromRequest(): Promise<Users | null> {
             return null;
         }
         return result.rows[0];
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error fetching user from request:', error);
         return null;
     }

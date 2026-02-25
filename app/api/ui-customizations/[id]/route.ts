@@ -14,7 +14,7 @@ export async function GET(
         const { id } = await context.params;
         const result = await uiCustomizationService.getById(user.id, id);
         return NextResponse.json(result);
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }
@@ -31,7 +31,7 @@ export async function PATCH(
         const body = await req.json();
         const result = await uiCustomizationService.update(user.id, id, body);
         return NextResponse.json(result);
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }
@@ -47,7 +47,7 @@ export async function DELETE(
         const { id } = await context.params;
         await uiCustomizationService.delete(user.id, id);
         return NextResponse.json({ success: true });
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }

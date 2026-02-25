@@ -2,15 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
 export class ConversationRepository {
-    async findAll(args: Prisma.ConversationFindManyArgs) {
+    async findAll<T extends Prisma.ConversationFindManyArgs>(args: T) {
         return prisma.conversation.findMany(args);
     }
 
-    async findById(id: string, include?: Prisma.ConversationInclude) {
+    async findById<T extends Prisma.ConversationInclude>(id: string, include?: T) {
         return prisma.conversation.findUnique({
             where: { id },
             include,
-        });
+        }) as Promise<Prisma.ConversationGetPayload<{ include: T }> | null>;
     }
 
     async count(where: Prisma.ConversationWhereInput) {

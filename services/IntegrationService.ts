@@ -10,7 +10,7 @@ export class IntegrationService {
         const validated = IntegrationSchema.parse(data);
 
         // Ensure config is valid JSON object for Prisma
-        const config = validated.config as any;
+        const config = validated.config as Prisma.InputJsonValue;
 
         const createData: Prisma.IntegrationCreateInput = {
             user: { connect: { id: userId } },
@@ -41,7 +41,7 @@ export class IntegrationService {
 
     async getIntegrations(userId: string, page: number = 1, limit: number = 10, search?: string, status?: string, type?: string) {
         const skip = (page - 1) * limit;
-        const where: any = { userId };
+        const where: Prisma.IntegrationWhereInput = { userId };
 
         if (search) {
             where.OR = [
@@ -114,7 +114,7 @@ export class IntegrationService {
 
         return prisma.$transaction(async (tx) => {
             // Update top-level integration fields
-            const updateData: any = {};
+            const updateData: Prisma.IntegrationUpdateInput = {};
             if (data.name !== undefined) updateData.name = data.name;
             if (data.description !== undefined) updateData.description = data.description;
             if (data.type !== undefined) updateData.type = data.type;

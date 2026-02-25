@@ -35,8 +35,8 @@ export function SheetSelector({ spreadsheetId, onSelect, currentValue }: SheetSe
                 if (!res.ok) throw new Error("Failed to fetch sheets");
                 const data = await res.json();
                 setSheets(data.sheets || []);
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err: unknown) {
+                setError((err as Error).message);
             } finally {
                 setLoading(false);
             }

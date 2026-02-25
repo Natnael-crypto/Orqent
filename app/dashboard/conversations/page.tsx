@@ -5,25 +5,34 @@ import { ConversationFilters } from "@/components/conversations/ConversationFilt
 import { ConversationList } from "@/components/conversations/ConversationList";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Conversations, ConversationSummary } from "@/types/conversations";
+import { Widget } from "@/types/widgets";
+import { JsonSchema, PropertyConfig, RestRequestBodyConfig } from "@/types/restApi";
+
+interface Filters {
+    widgetId?: string;
+    startDate?: string;
+    endDate?: string;
+}
 
 export default function ConversationsPage() {
-    const [conversations, setConversations] = useState([]);
-    const [widgets, setWidgets] = useState([]);
+    const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+    const [widgets, setWidgets] = useState<Widget[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
-    const [filters, setFilters] = useState({});
+    const [filters, setFilters] = useState<Filters>({});
 
     const fetchWidgets = async () => {
         try {
             const res = await fetch("/api/widgets?limit=100");
             const result = await res.json();
             setWidgets(result.data || []);
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Failed to fetch widgets", error);
         }
     };
 
-    const fetchConversations = useCallback(async (page: number, currentFilters: any) => {
+    const fetchConversations = useCallback(async (page: number, currentFilters: Filters) => {
         setIsLoading(true);
         try {
             const queryParams = new URLSearchParams({
@@ -38,7 +47,7 @@ export default function ConversationsPage() {
             const result = await res.json();
             setConversations(result.data || []);
             setPagination(result.pagination);
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Failed to fetch conversations", error);
         } finally {
             setIsLoading(false);
@@ -53,7 +62,7 @@ export default function ConversationsPage() {
         fetchConversations(pagination.page, filters);
     }, [pagination.page, filters, fetchConversations]);
 
-    const handleFilterChange = (newFilters: any) => {
+    const handleFilterChange = (newFilters: Filters) => {
         setFilters(newFilters);
         setPagination((prev) => ({ ...prev, page: 1 }));
     };

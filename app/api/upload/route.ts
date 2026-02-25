@@ -25,7 +25,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         });
 
         return NextResponse.json(blob);
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Error uploading to Vercel Blob:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }

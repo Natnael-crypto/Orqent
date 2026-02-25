@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 
 async function main() {
-    const widget = await (prisma as any).widget.findFirst({
+    const widget = await prisma.widget.findFirst({
         select: { id: true, name: true }
     });
     if (widget) {

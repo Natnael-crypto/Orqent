@@ -21,7 +21,7 @@ import Groq from 'groq-sdk';
 import * as dotenv from 'dotenv';
 import { toolRegistry } from './tools/tool-registry.js';
 import { SystemPrompt } from './promte.js';
-import type { RestToolDefinition } from './tools/types.js';
+import type { RestToolDefinition, BaseIntegrationConfig } from './tools/types.js';
 
 dotenv.config();
 
@@ -67,11 +67,7 @@ export interface IntegrationWithTools {
     /** Must match a registered ToolRegistry type, e.g. 'REST_API' */
     type: string;
     status: string;
-    config: {
-        baseUrl: string;
-        headers?: Record<string, string>;
-        [key: string]: unknown;
-    };
+    config: unknown; // Prisma JsonValue can be complex, and executors handle casting
     restTools: RestToolDefinition[];
 }
 
@@ -110,10 +106,10 @@ function buildGroqToolDef(
     // --- Query params ---
     const queryProps = tool.requestConfig?.queryParams?.properties ?? {};
     for (const [name, def] of Object.entries(queryProps)) {
-        if ((def as any).value !== undefined) continue;
+        if (def.value !== undefined) continue;
 
-        const type = (def as any).type || 'string';
-        let description = (def as any).description || name;
+        const type = def.type || 'string';
+        let description = def.description || name;
 
         // Hint for AI to omit optional numbers if unknown
         if (type === 'number' || type === 'integer') {
@@ -130,8 +126,8 @@ function buildGroqToolDef(
     const bodySchema = tool.requestConfig?.body?.schema;
     if (bodySchema?.properties) {
         for (const [name, def] of Object.entries(bodySchema.properties)) {
-            const type = (def as any).type || 'string';
-            let description = (def as any).description || name;
+            const type = def.type || 'string';
+            let description = def.description || name;
 
             if (type === 'number' || type === 'integer') {
                 description += ' (Optional: Leave blank/omit if unknown, do NOT send empty string)';
@@ -152,8 +148,8 @@ function buildGroqToolDef(
     for (const [name, def] of Object.entries(pathProps)) {
         if (!def.value) {
             properties[name] = {
-                type: (def as any).type || 'string',
-                description: (def as any).description || `Path parameter: ${name}`
+                type: def.type || 'string',
+                description: def.description || `Path parameter: ${name}`
             };
             required.push(name);
         }
@@ -343,7 +339,7 @@ export async function runAiAgent(input: AiAgentInput): Promise<AiAgentResult> {
 
             const result = await toolRegistry.execute(
                 entry.integration.type,
-                { ...entry.integration.config, userId: entry.integration.userId },
+                { ...(entry.integration.config as BaseIntegrationConfig), userId: entry.integration.userId },
                 entry.tool,
                 args
             );

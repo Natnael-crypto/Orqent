@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
         const result = await uiCustomizationService.list(user.id);
         return NextResponse.json(result);
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const result = await uiCustomizationService.create(user.id, body);
         return NextResponse.json(result, { status: 201 });
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }

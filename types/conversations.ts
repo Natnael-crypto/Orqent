@@ -1,14 +1,13 @@
 
-
 export interface Conversations {
     id: string;
     widgetId: string;
-    visitorId: string;
+    visitorId: string | null;
     cost: number;
     totalTokens: number;
     toolExecutions: number;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface Messages {
@@ -17,7 +16,23 @@ export interface Messages {
     role: string;
     content: string;
     tokens: number;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: string;
+    updatedAt: string;
 }
 
+export interface FullConversation extends Conversations {
+    widget: {
+        id: string;
+        name: string;
+    };
+    messages: Messages[];
+    metadata: Record<string, unknown> | null;
+    externalId: string | null;
+}
+
+export interface ConversationSummary extends Conversations {
+    lastMessage: string | null;
+    widget: {
+        name: string;
+    };
+}

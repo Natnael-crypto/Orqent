@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { Credentials } from 'google-auth-library';
 import { prisma } from './prisma';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -33,7 +34,7 @@ export async function getGoogleTokens(code: string) {
     return tokens;
 }
 
-export async function saveGoogleTokens(userId: string, tokens: any) {
+export async function saveGoogleTokens(userId: string, tokens: Credentials) {
     const { access_token, refresh_token, expiry_date, scope } = tokens;
 
     console.log(`[GoogleAuth] Saving tokens for user ${userId}. Refresh token present: ${!!refresh_token}`);
@@ -51,8 +52,8 @@ export async function saveGoogleTokens(userId: string, tokens: any) {
         return prisma.oAuthToken.update({
             where: { id: existingToken.id },
             data: {
-                accessToken: access_token,
-                refreshToken: refresh_token || undefined,
+                accessToken: access_token || undefined,
+                refreshToken: refresh_token ?? undefined,
                 expiryDate: expiry_date ? new Date(expiry_date) : undefined,
                 scopes: scope ? scope.split(' ') : undefined,
             },
@@ -63,8 +64,8 @@ export async function saveGoogleTokens(userId: string, tokens: any) {
             data: {
                 userId,
                 provider: 'google',
-                accessToken: access_token,
-                refreshToken: refresh_token,
+                accessToken: access_token as string,
+                refreshToken: refresh_token ?? null,
                 expiryDate: expiry_date ? new Date(expiry_date) : null,
                 scopes: scope ? scope.split(' ') : [],
             },

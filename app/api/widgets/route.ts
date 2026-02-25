@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
         const result = await widgetService.getWidgets(user.id, page, limit, search, status, model);
 
         return NextResponse.json(result);
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(widget, { status: 201 });
 
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }

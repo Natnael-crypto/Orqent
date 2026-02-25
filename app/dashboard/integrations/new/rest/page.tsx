@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { JsonSchema, PropertyConfig, RestRequestBodyConfig } from "@/types/restApi";
 
 const PropertyRow = ({
     name,
@@ -37,9 +38,9 @@ const PropertyRow = ({
     showValue = false
 }: {
     name: string;
-    config: any;
+    config: PropertyConfig;
     onRemove: () => void;
-    onUpdateProperty: (field: string, value: any) => void;
+    onUpdateProperty: (field: string, value: string) => void;
     onUpdateName: (newName: string) => void;
     showValue?: boolean;
 }) => {
@@ -124,8 +125,8 @@ const PropertyEditor = ({
     showValue = false
 }: {
     title: string;
-    schema: any;
-    onChange: (newSchema: any) => void;
+    schema: JsonSchema;
+    onChange: (newSchema: JsonSchema) => void;
     showValue?: boolean;
 }) => {
     const properties = schema.properties || {};
@@ -144,7 +145,7 @@ const PropertyEditor = ({
         });
     };
 
-    const updateProperty = (name: string, field: string, value: any) => {
+    const updateProperty = (name: string, field: string, value: string) => {
         onChange({
             ...schema,
             properties: {
@@ -193,7 +194,7 @@ const PropertyEditor = ({
                 </Button>
             </div>
             <div className="space-y-3">
-                {Object.entries(properties).map(([name, config]: [string, any]) => (
+                {Object.entries(properties).map(([name, config]) => (
                     <PropertyRow
                         key={name}
                         name={name}
@@ -235,16 +236,16 @@ const CreateRestIntegration = () => {
             contentType: "application/json",
             headers: {},
             requestConfig: {
-                pathParams: { type: "object", properties: {} },
-                queryParams: { type: "object", properties: {} },
-                headers: { type: "object", properties: {} },
-                cookies: { type: "object", properties: {} },
-                body: { type: "JSON", schema: { type: "object", properties: {} } },
+                pathParams: { type: "object" as const, properties: {} },
+                queryParams: { type: "object" as const, properties: {} },
+                headers: { type: "object" as const, properties: {} },
+                cookies: { type: "object" as const, properties: {} },
+                body: { type: "JSON" as const, schema: { type: "object" as const, properties: {} } },
                 timeoutMs: 30000
             },
             responseConfig: {
                 successStatusCodes: [200],
-                responseSchema: { type: "object", properties: {} },
+                responseSchema: { type: "object" as const, properties: {} },
                 dataPath: "",
                 errorPath: "",
                 strictValidation: false
@@ -267,21 +268,21 @@ const CreateRestIntegration = () => {
         if (step > 0) setStep(step - 1);
     };
 
-    const updateTool = (field: string, value: any) => {
+    const updateTool = (field: string, value: string) => {
         const newRestTools = [...formData.restTools];
-        (newRestTools[0] as any)[field] = value;
+        (newRestTools[0] as unknown as Record<string, string>)[field] = value;
         setFormData({ ...formData, restTools: newRestTools });
     };
 
-    const updateRequestConfig = (field: string, value: any) => {
+    const updateRequestConfig = (field: string, value: JsonSchema | RestRequestBodyConfig | number) => {
         const newRestTools = [...formData.restTools];
-        (newRestTools[0].requestConfig as any)[field] = value;
+        (newRestTools[0].requestConfig as unknown as Record<string, unknown>)[field] = value;
         setFormData({ ...formData, restTools: newRestTools });
     };
 
-    const updateResponseConfig = (field: string, value: any) => {
+    const updateResponseConfig = (field: string, value: JsonSchema | number[] | boolean | string) => {
         const newRestTools = [...formData.restTools];
-        (newRestTools[0].responseConfig as any)[field] = value;
+        (newRestTools[0].responseConfig as unknown as Record<string, unknown>)[field] = value;
         setFormData({ ...formData, restTools: newRestTools });
     };
 
@@ -449,8 +450,8 @@ const CreateRestIntegration = () => {
                             <PropertyEditor
                                 title="Body Blueprint"
                                 showValue={true}
-                                schema={formData.restTools[0].requestConfig.body?.schema}
-                                onChange={(s) => updateRequestConfig("body", { ...formData.restTools[0].requestConfig.body, schema: s })}
+                                schema={formData.restTools[0].requestConfig.body!.schema}
+                                onChange={(s) => updateRequestConfig("body", { ...formData.restTools[0].requestConfig.body!, schema: s })}
                             />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

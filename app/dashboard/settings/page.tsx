@@ -38,7 +38,7 @@ export default function SettingsPage() {
                         companyName: data.user.companyName || "",
                     });
                 }
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error("Failed to fetch user:", error);
             } finally {
                 setLoading(false);
@@ -72,7 +72,7 @@ export default function SettingsPage() {
                     description: data.error || "Failed to update profile",
                 });
             }
-        } catch (error) {
+        } catch (error: unknown) {
             toast({
                 variant: "destructive",
                 title: "Error",
@@ -129,7 +129,7 @@ export default function SettingsPage() {
                     description: data.error || "Failed to update password",
                 });
             }
-        } catch (error) {
+        } catch (error: unknown) {
             toast({
                 variant: "destructive",
                 title: "Error",

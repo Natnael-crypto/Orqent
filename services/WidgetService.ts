@@ -1,4 +1,5 @@
 import { widgetRepository } from "@/repositories/WidgetRepository";
+import { Prisma } from "@prisma/client";
 import { WidgetValuesSchema } from "@/lib/validation";
 import { ApiError } from "@/lib/api-error";
 import { z } from "zod";
@@ -51,13 +52,20 @@ export class WidgetService {
             }
 
             // Return complete widget
-            return widgetRepository.findById(widget.id);
+            return tx.widget.findUnique({
+                where: { id: widget.id },
+                include: {
+                    uiCustomization: true,
+                    allowedDomains: true,
+                    integrations: true,
+                },
+            });
         });
     }
 
     async getWidgets(userId: string, page: number = 1, limit: number = 10, search?: string, status?: string, model?: string) {
         const skip = (page - 1) * limit;
-        const where: any = { userId };
+        const where: Prisma.WidgetWhereInput = { userId };
 
         if (search) {
             where.OR = [
@@ -73,6 +81,11 @@ export class WidgetService {
                 skip,
                 take: limit,
                 where,
+                include: {
+                    uiCustomization: true,
+                    allowedDomains: true,
+                    integrations: true,
+                },
                 orderBy: { updatedAt: "desc" },
             }),
             widgetRepository.count(where),
@@ -102,14 +115,16 @@ export class WidgetService {
 
         return prisma.$transaction(async (tx) => {
             // 1. Update Basic Fields
-            const updateData: any = {};
+            const updateData: Prisma.WidgetUpdateInput = {};
             if (validated.name !== undefined) updateData.name = validated.name;
             if (validated.description !== undefined) updateData.description = validated.description;
             if (validated.model !== undefined) updateData.model = validated.model;
             if (validated.systemPrompt !== undefined) updateData.systemPrompt = validated.systemPrompt;
             if (validated.temperature !== undefined) updateData.temperature = validated.temperature;
             if (validated.maxTokens !== undefined) updateData.maxTokens = validated.maxTokens;
-            if (validated.uiCustomizationId !== undefined) updateData.uiCustomizationId = validated.uiCustomizationId;
+            if (validated.uiCustomizationId !== undefined) {
+                updateData.uiCustomization = validated.uiCustomizationId ? { connect: { id: validated.uiCustomizationId } } : { disconnect: true };
+            }
 
             if (Object.keys(updateData).length > 0) {
                 await tx.widget.update({

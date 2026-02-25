@@ -1,4 +1,5 @@
 import { redis } from './redis.js';
+import { Widget, Conversation, Message } from '@prisma/client';
 
 // ─── Key Factories ───────────────────────────────────────────────────────────
 const KEYS = {
@@ -15,7 +16,7 @@ const TTL = {
 };
 
 // ─── Widget Cache ─────────────────────────────────────────────────────────────
-export async function getCachedWidget(widgetId: string): Promise<any | null> {
+export async function getCachedWidget(widgetId: string): Promise<Widget | null> {
     try {
         return await redis.get(KEYS.widget(widgetId));
     } catch (err) {
@@ -24,7 +25,7 @@ export async function getCachedWidget(widgetId: string): Promise<any | null> {
     }
 }
 
-export async function setCachedWidget(widget: any): Promise<void> {
+export async function setCachedWidget(widget: Widget): Promise<void> {
     try {
         await redis.set(KEYS.widget(widget.id), widget, { ex: TTL.widget });
     } catch (err) {
@@ -41,7 +42,7 @@ export async function invalidateCachedWidget(widgetId: string): Promise<void> {
 }
 
 // ─── Conversation Cache ───────────────────────────────────────────────────────
-export async function getCachedConversation(conversationId: string): Promise<any | null> {
+export async function getCachedConversation(conversationId: string): Promise<Conversation | null> {
     try {
         return await redis.get(KEYS.conversation(conversationId));
     } catch (err) {
@@ -50,7 +51,7 @@ export async function getCachedConversation(conversationId: string): Promise<any
     }
 }
 
-export async function setCachedConversation(conversation: any): Promise<void> {
+export async function setCachedConversation(conversation: Conversation & { messages?: Message[] }): Promise<void> {
     try {
         // Store without messages array (messages are stored separately)
         const { messages: _messages, ...convData } = conversation;
@@ -65,7 +66,7 @@ export async function updateCachedConversationLastMessage(conversationId: string
         const conv = await getCachedConversation(conversationId);
         if (conv) {
             conv.lastMessage = lastMessage;
-            conv.updatedAt = new Date().toISOString();
+            conv.updatedAt = new Date();
             await redis.set(KEYS.conversation(conversationId), conv, { ex: TTL.conversation });
         }
     } catch (err) {
@@ -82,9 +83,9 @@ export async function invalidateCachedConversation(conversationId: string): Prom
 }
 
 // ─── Messages Cache ───────────────────────────────────────────────────────────
-export async function getCachedMessages(conversationId: string): Promise<any[] | null> {
+export async function getCachedMessages(conversationId: string): Promise<Message[] | null> {
     try {
-        const data = await redis.get<any[]>(KEYS.messages(conversationId));
+        const data = await redis.get<Message[]>(KEYS.messages(conversationId));
         return data ?? null;
     } catch (err) {
         console.error('[Cache] getCachedMessages error:', err);
@@ -92,7 +93,7 @@ export async function getCachedMessages(conversationId: string): Promise<any[] |
     }
 }
 
-export async function setCachedMessages(conversationId: string, messages: any[]): Promise<void> {
+export async function setCachedMessages(conversationId: string, messages: Message[]): Promise<void> {
     try {
         await redis.set(KEYS.messages(conversationId), messages, { ex: TTL.messages });
     } catch (err) {
@@ -104,7 +105,7 @@ export async function setCachedMessages(conversationId: string, messages: any[])
  * Append a single message to the Redis message list and refresh TTL.
  * Falls back gracefully if the existing cache is missing (cache miss is OK).
  */
-export async function appendCachedMessage(conversationId: string, message: any): Promise<void> {
+export async function appendCachedMessage(conversationId: string, message: Message): Promise<void> {
     try {
         const existing = await getCachedMessages(conversationId);
         if (existing !== null) {

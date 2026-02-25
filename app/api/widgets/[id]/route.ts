@@ -24,7 +24,7 @@ export async function GET(
 
         return NextResponse.json(formattedWidget);
 
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }
@@ -52,7 +52,7 @@ export async function PATCH(
 
         return NextResponse.json(formattedWidget);
 
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }
@@ -72,7 +72,7 @@ export async function DELETE(
 
         return NextResponse.json({ success: true, message: 'Widget deleted successfully' });
 
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }

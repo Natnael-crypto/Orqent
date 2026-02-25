@@ -38,16 +38,18 @@ export async function GET(req: NextRequest) {
         let tokens;
         try {
             tokens = await getGoogleTokens(code);
-        } catch (e: any) {
-            console.error('[Google Callback] Token exchange failed:', e.message || e);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error('[Google Callback] Token exchange failed:', errorMessage);
             return NextResponse.redirect(new URL('/dashboard/integrations?error=token_exchange_failed_api', req.url));
         }
 
         console.log('[Google Callback] Tokens received, saving to database...');
         try {
             await saveGoogleTokens(userId, tokens);
-        } catch (e: any) {
-            console.error('[Google Callback] Failed to save tokens:', e.message || e);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error('[Google Callback] Failed to save tokens:', errorMessage);
             return NextResponse.redirect(new URL('/dashboard/integrations?error=token_save_failed', req.url));
         }
 

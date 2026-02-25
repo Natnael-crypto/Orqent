@@ -226,7 +226,7 @@ const Integrations = () => {
                                     <TableCell className="text-center">
                                         <div className="flex justify-center">
                                             {ig.status === "ACTIVE" ? (
-                                                <Badge variant="success" className="bg-emerald-50 text-emerald-700 border-emerald-100 font-medium px-2 py-0 text-[10px] items-center gap-1">
+                                                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-100 font-medium px-2 py-0 text-[10px] items-center gap-1">
                                                     <CheckCircle2 className="w-3 h-3" />
                                                     Active
                                                 </Badge>

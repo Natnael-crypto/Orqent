@@ -5,7 +5,7 @@ import { handleApiError } from '@/lib/api-error';
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await getUserFromRequest();
@@ -17,7 +17,7 @@ export async function GET(
         const conversation = await conversationService.getConversationById(user.id, id);
 
         return NextResponse.json(conversation);
-    } catch (error) {
+    } catch (error: unknown) {
         return handleApiError(error);
     }
 }

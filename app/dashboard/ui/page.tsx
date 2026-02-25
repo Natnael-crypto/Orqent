@@ -5,9 +5,10 @@ import { Plus, Palette, MoreHorizontal, Pencil, Trash2, ExternalLink } from "luc
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
+import { UiCustomization } from "@/types/widgets";
 
 const UICustomizationList = () => {
-    const [customizations, setCustomizations] = useState<any[]>([]);
+    const [customizations, setCustomizations] = useState<UiCustomization[]>([]);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
@@ -18,7 +19,7 @@ const UICustomizationList = () => {
                 const data = await res.json();
                 setCustomizations(data);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Error fetching customizations:", error);
         } finally {
             setLoading(false);
@@ -40,7 +41,7 @@ const UICustomizationList = () => {
             } else {
                 toast({ title: "Error", description: "Failed to delete customization", variant: "destructive" });
             }
-        } catch (error) {
+        } catch (error: unknown) {
             toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
         }
     };

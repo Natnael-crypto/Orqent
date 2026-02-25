@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, Calendar, User, MessageCircle, Info } from "lucide-react";
 import { format } from "date-fns";
+import { FullConversation } from "@/types/conversations";
 
 export default function ConversationDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const [conversation, setConversation] = useState<any>(null);
+    const [conversation, setConversation] = useState<FullConversation | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -23,7 +24,7 @@ export default function ConversationDetailPage() {
                 if (!res.ok) throw new Error("Failed to fetch");
                 const result = await res.json();
                 setConversation(result);
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error(error);
             } finally {
                 setIsLoading(false);

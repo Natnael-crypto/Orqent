@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { integrationService } from "./services/integrationService";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { ApiError } from "@/types/common";
 
 export function useIntegrations(params: {
     page?: number;
@@ -21,26 +22,26 @@ export const useIntegrationActions = () => {
     const router = useRouter();
 
     const createIntegration = useMutation({
-        mutationFn: (payload: any) => integrationService.createIntegration(payload),
+        mutationFn: (payload: unknown) => integrationService.createIntegration(payload),
         onSuccess: () => {
             toast.success("Integration created successfully");
             queryClient.invalidateQueries({ queryKey: ["integrations"] });
             router.push("/dashboard/integrations");
         },
-        onError: (err: any) => {
-            toast.error(err?.response?.data?.error || "Failed to create integration");
+        onError: (err: unknown) => {
+            toast.error((err as ApiError)?.response?.data?.error || "Failed to create integration");
         },
     });
 
     const updateIntegration = useMutation({
-        mutationFn: ({ id, payload }: { id: string; payload: any }) =>
+        mutationFn: ({ id, payload }: { id: string; payload: unknown }) =>
             integrationService.updateIntegration(id, payload),
         onSuccess: () => {
             toast.success("Integration updated successfully");
             queryClient.invalidateQueries({ queryKey: ["integrations"] });
         },
-        onError: (err: any) => {
-            toast.error(err?.response?.data?.error || "Update failed");
+        onError: (err: unknown) => {
+            toast.error((err as ApiError)?.response?.data?.error || "Update failed");
         },
     });
 
@@ -50,8 +51,8 @@ export const useIntegrationActions = () => {
             toast.success("Integration deleted successfully");
             queryClient.invalidateQueries({ queryKey: ["integrations"] });
         },
-        onError: (err: any) => {
-            toast.error(err?.response?.data?.error || "Deletion failed");
+        onError: (err: unknown) => {
+            toast.error((err as ApiError)?.response?.data?.error || "Deletion failed");
         },
     });
 
@@ -61,8 +62,8 @@ export const useIntegrationActions = () => {
             toast.success("Integrations deleted successfully");
             queryClient.invalidateQueries({ queryKey: ["integrations"] });
         },
-        onError: (err: any) => {
-            toast.error(err?.response?.data?.error || "Bulk deletion failed");
+        onError: (err: unknown) => {
+            toast.error((err as ApiError)?.response?.data?.error || "Bulk deletion failed");
         },
     });
 

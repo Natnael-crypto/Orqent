@@ -20,7 +20,7 @@ interface SimulatedChatProps {
         fontSize: number;
         agentName: string;
         welcomeMessage: string;
-        agentAvatarUrl?: string;
+        agentAvatarUrl?: string | null;
     };
 }
 
@@ -83,7 +83,7 @@ export function SimulatedChat({ customization }: SimulatedChatProps) {
                 style={{ backgroundColor: primaryColor }}
             >
                 <Avatar className="w-8 h-8 border border-white/20">
-                    <AvatarImage src={customization?.agentAvatarUrl} />
+                    <AvatarImage src={customization?.agentAvatarUrl || undefined} />
                     <AvatarFallback className="bg-white/10 text-white text-[10px]">
                         {agentName.substring(0, 2).toUpperCase()}
                     </AvatarFallback>

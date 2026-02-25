@@ -49,16 +49,16 @@ export interface RestTool {
 }
 
 
+export interface PropertyConfig {
+    type?: string;
+    value?: string;
+    description?: string;
+    enum?: string[];
+}
+
 export type JsonSchema = {
     type: "object";
-    properties: Record<
-        string,
-        {
-            type: string;
-            description?: string;
-            enum?: string[];
-        }
-    >;
+    properties: Record<string, PropertyConfig>;
     required?: string[];
 };
 

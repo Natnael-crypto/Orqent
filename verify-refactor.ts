@@ -42,7 +42,7 @@ async function verify() {
 
         console.log('Verification completed successfully!');
 
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Verification failed:', error);
     } finally {
         process.exit();

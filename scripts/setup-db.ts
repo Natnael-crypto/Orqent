@@ -1,10 +1,10 @@
 import { query } from '@/lib/db';
 
 async function setupDatabase() {
-    try {
-        console.log('Setting up database...');
+  try {
+    console.log('Setting up database...');
 
-        await query(`
+    await query(`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         name VARCHAR(255) NOT NULL,
@@ -18,7 +18,7 @@ async function setupDatabase() {
       );
     `);
 
-        await query(`
+    await query(`
       CREATE TABLE IF NOT EXISTS codes (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         code VARCHAR(255) NOT NULL,
@@ -29,15 +29,15 @@ async function setupDatabase() {
       );
     `);
 
-        console.log('Database setup complete.');
-    } catch (error) {
-        console.error('Database setup failed:', error);
-    }
+    console.log('Database setup complete.');
+  } catch (error: unknown) {
+    console.error('Database setup failed:', error);
+  }
 }
 
 // Check if running directly
 if (require.main === module) {
-    setupDatabase();
+  setupDatabase();
 }
 
 export default setupDatabase;

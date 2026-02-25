@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 
 async function main() {
-    const widgets = await (prisma as any).widget.findMany({
+    const widgets = await prisma.widget.findMany({
         take: 1,
         select: { id: true, name: true }
     });

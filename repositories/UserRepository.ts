@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { Prisma, User } from "@prisma/client";
 
 export class UserRepository {
-    async findById(id: string): Promise<User | null> {
-        return prisma.user.findUnique({ where: { id } });
+    async findById<T extends Prisma.UserInclude>(id: string, include?: T) {
+        return prisma.user.findUnique({ where: { id }, include });
     }
 
     async findByEmail(email: string): Promise<User | null> {
@@ -22,14 +22,8 @@ export class UserRepository {
         return prisma.user.delete({ where: { id } });
     }
 
-    async findAll(params: {
-        skip?: number;
-        take?: number;
-        where?: Prisma.UserWhereInput;
-        orderBy?: Prisma.UserOrderByWithRelationInput;
-    }): Promise<User[]> {
-        const { skip, take, where, orderBy } = params;
-        return prisma.user.findMany({ skip, take, where, orderBy });
+    async findAll<T extends Prisma.UserFindManyArgs>(args: T) {
+        return prisma.user.findMany(args);
     }
 }
 

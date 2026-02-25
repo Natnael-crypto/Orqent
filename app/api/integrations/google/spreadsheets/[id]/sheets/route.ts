@@ -5,7 +5,7 @@ import { google } from 'googleapis';
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await getUserFromRequest();
@@ -13,7 +13,7 @@ export async function GET(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const spreadsheetId = params.id;
+        const { id: spreadsheetId } = await params;
         const auth = await getClientForUser(user.id);
         const sheets = google.sheets({ version: 'v4', auth });
 
@@ -26,10 +26,11 @@ export async function GET(
         return NextResponse.json({
             sheets: sheetNames
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Google Sheets API] Error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch sheets';
         return NextResponse.json(
-            { error: error.message || 'Failed to fetch sheets' },
+            { error: errorMessage },
             { status: 500 }
         );
     }
