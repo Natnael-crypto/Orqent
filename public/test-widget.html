@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velora Widget Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 50px; line-height: 1.6; }
+        .code-snippet { background: #f4f4f4; padding: 20px; border-radius: 8px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Chat Widget Test Page</h1>
+    <p>This page simulates a customer website that has embedded the Velora Chat Widget.</p>
+    
+    <div class="code-snippet">
+        &lt;script src="http://localhost:3000/widget/REPLACE_WITH_WIDGET_ID.js"&gt;&lt;/script&gt;
+    </div>
+
+    <!-- We'll inject the script dynamically for testing if we have an ID, 
+         otherwise we can just manually test by adding the script tag with a real ID. -->
+    
+    <script>
+        // For testing purposes, we can try to fetch a widget ID from the database 
+        // OR the user can provide one.
+        console.log("To test, append a real widget ID to the URL or edit this file.");
+    </script>
+
+    <!-- Example of how it should look with a real ID -->
+    <script src="http://localhost:3000/widget/bb236290-3588-4da5-beaa-2c067681a214.js"></script>
+</body>
+</html>
