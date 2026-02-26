@@ -58,14 +58,37 @@ const toolChartConfig = {
     },
 } satisfies ChartConfig;
 
+interface TokenData {
+    date: string;
+    tokens: number;
+}
+
+interface ConvData {
+    week: string;
+    conversations: number;
+}
+
+interface CostData {
+    month: string;
+    cost: number;
+}
+
+interface ToolData {
+    tool: string;
+    value: number;
+    fill: string;
+}
+
+interface DashboardData {
+    stats: { label: string; value: string | number; change: string }[];
+    tokenData: TokenData[];
+    convData: ConvData[];
+    costData: CostData[];
+    toolData: ToolData[];
+}
+
 const Overview = () => {
-    const [data, setData] = useState<{
-        stats: { label: string; value: string | number; change: string }[];
-        tokenData: any[];
-        convData: any[];
-        costData: any[];
-        toolData: any[];
-    }>({
+    const [data, setData] = useState<DashboardData>({
         stats: [],
         tokenData: [],
         convData: [],

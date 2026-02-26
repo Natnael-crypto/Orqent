@@ -24,8 +24,14 @@ interface UsageRecord {
     cost: number | string;
 }
 
+interface ChartDataEntry {
+    date: string;
+    promptTokens: number;
+    completionTokens: number;
+}
+
 export default function UsagePage() {
-    const [data, setData] = useState<{ chartData: any[], usageRecords: UsageRecord[] }>({ chartData: [], usageRecords: [] });
+    const [data, setData] = useState<{ chartData: ChartDataEntry[], usageRecords: UsageRecord[] }>({ chartData: [], usageRecords: [] });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

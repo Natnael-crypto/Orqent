@@ -88,7 +88,7 @@ export async function GET(req: Request) {
         const os: Record<string, number> = {};
 
         conversations.forEach(conv => {
-            const metadata = conv.metadata as any;
+            const metadata = conv.metadata as { userAgent?: string } | null;
             if (metadata?.userAgent) {
                 const ua = metadata.userAgent.toLowerCase();
                 if (ua.includes("chrome")) browsers["Chrome"] = (browsers["Chrome"] || 0) + 1;

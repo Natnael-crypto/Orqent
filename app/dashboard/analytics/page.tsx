@@ -84,7 +84,7 @@ export default function AnalyticsPage() {
         <div className="space-y-8 pb-10">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-                <p className="text-muted-foreground mt-2">Comprehensive overview of your AI agent's performance and usage.</p>
+                <p className="text-muted-foreground mt-2">Comprehensive overview of your AI agent&apos;s performance and usage.</p>
             </div>
 
             {/* Summary Grid */}
