@@ -184,8 +184,8 @@ export default function WidgetDetailPage({ params }: WidgetDetailPageProps) {
     }
 
     const embedScript = scriptType === "html"
-        ? `<script src="https://cdn.velora.io/widget/${widget?.id}.js"></script>`
-        : `import Script from 'next/script';\n\n<Script\n  src="https://cdn.velora.io/widget/${widget?.id}.js"\n  strategy="lazyOnload"\n/>`;
+        ? `<script src="https://orqent-ai.vercel.app/widget/${widget?.id}.js"></script>`
+        : `import Script from 'next/script';\n\n<Script\n  src="https://orqent-ai.vercel.app/widget/${widget?.id}.js"\n  strategy="lazyOnload"\n/>`;
 
     return (
         <div className="space-y-8 max-w-7xl mx-auto pb-20">

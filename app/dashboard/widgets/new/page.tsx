@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Palette, RefreshCw, ExternalLink, Plus, Loader2 } from "lucide-react";
+import { Palette, RefreshCw, ExternalLink, Plus, Loader2, Check, Copy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
-import { Integration, UiCustomization } from "@/types/widgets";
+import { Integration, UiCustomization, Widget } from "@/types/widgets";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 const steps = ["Basic Info", "AI Configuration", "Integrations", "UI Selection", "Install Script"];
 
@@ -19,6 +22,8 @@ const WidgetCreation = () => {
     const [loadingIntegrations, setLoadingIntegrations] = useState(false);
     const [uiCustomizations, setUiCustomizations] = useState<UiCustomization[]>([]);
     const [loadingCustomizations, setLoadingCustomizations] = useState(false);
+    const [scriptType, setScriptType] = useState<"html" | "react">("html");
+    const [widget, setWidget] = useState<Widget | null>(null);
 
     const [config, setConfig] = useState({
         name: "",
@@ -95,8 +100,10 @@ const WidgetCreation = () => {
             });
 
             if (res.ok) {
+                const data = await res.json();
+                setWidget(data);
                 toast({ title: "Success", description: "Widget published successfully" });
-                router.push("/dashboard/widgets");
+                setStep(4); // Move to Install Script step
             } else {
                 toast({ title: "Error", description: "Failed to publish widget", variant: "destructive" });
             }
@@ -107,7 +114,10 @@ const WidgetCreation = () => {
         }
     };
 
-    const embedScript = `<script src="https://cdn.velora.io/widget/${config.name.toLowerCase().replace(/\s/g, "-") || "my-widget"}.js"></script>`;
+    const embedScript = scriptType === "html"
+        ? `<script src="https://orqent-ai.vercel.app/widget/${widget?.id}.js"></script>`
+        : `import Script from 'next/script';\n\n<Script\n  src="https://orqent-ai.vercel.app/widget/${widget?.id}.js"\n  strategy="lazyOnload"\n/>`;
+
 
     const toggleIntegration = (id: string) => {
         setConfig(prev => ({
@@ -344,20 +354,53 @@ const WidgetCreation = () => {
             {/* Step 5: Install */}
             {step === 4 && (
                 <div className="max-w-2xl space-y-4">
-                    <p className="text-sm text-muted-foreground">Add this script to your website to deploy the chat widget.</p>
-                    <div className="bg-foreground text-background rounded-lg p-4 font-mono text-sm overflow-x-auto">
-                        {embedScript}
-                    </div>
-                    <button
-                        onClick={() => { navigator.clipboard.writeText(embedScript); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                        className="text-sm px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors"
-                    >
-                        {copied ? "Copied ✓" : "Copy to clipboard"}
-                    </button>
-                    <div className="pt-4">
-                        <button onClick={handleCreate} disabled={creating} className="text-sm font-medium px-6 py-2.5 rounded-md bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50">
-                            {creating ? "Publishing..." : "Publish widget"}
-                        </button>
+                    <div className="grid gap-2">
+                        <div className="flex items-center justify-between">
+                            <Label>Deployment Script</Label>
+                            <div className="flex bg-muted/50 p-0.5 rounded-lg">
+                                <button
+                                    onClick={() => setScriptType("html")}
+                                    className={cn(
+                                        "px-2 py-1 text-[10px] font-medium rounded-md transition-all",
+                                        scriptType === "html" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    HTML
+                                </button>
+                                <button
+                                    onClick={() => setScriptType("react")}
+                                    className={cn(
+                                        "px-2 py-1 text-[10px] font-medium rounded-md transition-all",
+                                        scriptType === "react" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    React (Next.js)
+                                </button>
+                            </div>
+                        </div>
+                        <div className="relative group">
+                            <div className="p-3 bg-muted/40 rounded-lg font-mono text-xs border border-dashed text-muted-foreground whitespace-pre-wrap break-all min-h-[48px] flex items-start">
+                                <code className="pr-10">{embedScript}</code>
+                                <Button
+                                    variant="secondary"
+                                    size="icon"
+                                    className="absolute right-2 top-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(embedScript);
+                                        setCopied(true);
+                                        setTimeout(() => setCopied(false), 2000);
+                                        toast({ title: "Copied", description: "Script copied to clipboard" });
+                                    }}
+                                >
+                                    {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                                </Button>
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                            {scriptType === "html"
+                                ? "Add this script to your website's <head> or before the closing </body> tag."
+                                : "Use this component in your Next.js application for optimized loading."}
+                        </p>
                     </div>
                 </div>
             )}
@@ -369,9 +412,24 @@ const WidgetCreation = () => {
                         Back
                     </button>
                 )}
-                {step < steps.length - 1 && (
+                {step < steps.length - 2 && (
                     <button onClick={handleNext} className="text-sm font-medium px-4 py-2 rounded-md bg-foreground text-background hover:bg-foreground/90 transition-colors">
                         Continue
+                    </button>
+                )}
+                {step === steps.length - 2 && (
+                    <button
+                        onClick={handleCreate}
+                        disabled={creating}
+                        className="text-sm font-medium px-4 py-2 rounded-md bg-foreground text-background hover:bg-foreground/90 transition-colors flex items-center gap-2"
+                    >
+                        {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                        Create & Finish
+                    </button>
+                )}
+                {step === steps.length - 1 && (
+                    <button onClick={() => router.push("/dashboard/widgets")} className="text-sm font-medium px-4 py-2 rounded-md bg-foreground text-background hover:bg-foreground/90 transition-colors">
+                        Go to Dashboard
                     </button>
                 )}
             </div>
