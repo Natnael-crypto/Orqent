@@ -21,6 +21,7 @@ model User {
   uiCustomizations UICustomization[]
   widgets          Widget[]
   oauthTokens      OAuthToken[]
+  tokenUsages      TokenUsage[]
 
   @@index([email])
   @@map("users")
@@ -213,4 +214,26 @@ model OAuthToken {
 
   @@index([userId, provider])
   @@map("oauth_tokens")
+}
+
+model TokenUsage {
+  id              String   @id @default(uuid())
+  userId          String
+  widgetId        String?
+  conversationId  String?
+  messageId       String?  @unique
+  promptTokens    Int      @default(0)
+  completionTokens Int     @default(0)
+  totalTokens     Int      @default(0)
+  role            String   @default("assistant")
+  model           String?
+  cost            Float    @default(0)
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([widgetId])
+  @@index([createdAt])
+  @@map("token_usages")
 }
