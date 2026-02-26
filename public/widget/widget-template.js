@@ -503,6 +503,8 @@
             socket = null;
             setInputEnabled(false);
             console.warn('[Velora WS] closed — code:', event.code, '| reason:', event.reason || '(none)');
+            console.log('event', event);
+            
             // Don't reconnect on intentional close
             if (event.code === 1000 || event.code === 1001) return;
             if (reconnectAttempts < MAX_RECONNECT && isOpen) {

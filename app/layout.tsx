@@ -25,7 +25,7 @@ export default function RootLayout({
       <body className={`${saira.className} antialiased`}>
         <Providers>{children}</Providers>
         <Script
-          src="https://orqent-ai.vercel.app/widget/ad31178b-06ef-4d23-857a-90408858050f.js"
+          src="https://orqent-ai.vercel.app/widget/6aa287a2-7e46-4e95-b581-5d8192c829cc.js"
           strategy="lazyOnload"
         />
       </body>

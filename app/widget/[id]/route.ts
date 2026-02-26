@@ -35,7 +35,7 @@ export async function GET(
             borderRadius: ui?.borderRadius || 8,
             fontSize: ui?.fontSize || 14,
             widgetId: widget.id,
-            wsUrl: process.env.NEXT_PUBLIC_WS_URL || (process.env.NODE_ENV === 'development' ? 'ws://localhost:3000/ws' : `wss://${request.headers.get('host')}/ws`)
+            wsUrl: process.env.NEXT_PUBLIC_URL || (process.env.NODE_ENV === 'development' ? 'ws://localhost:3000/ws' : `wss://${request.headers.get('host')}/ws`)
         };
 
         // Simplified injection: Prepend config and send
